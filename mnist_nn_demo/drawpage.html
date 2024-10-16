@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Drawing</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+            cursor: crosshair;
+            background-color: #000; // black fill
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <br>
+    <button onclick="classifyImage()">Classify Image</button> <!-- Changed button label -->
+    <button onclick="clearCanvas()">Clear</button>
+    <br>
+    <img id="canvasImg" style="display:none;">
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            draw(e);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                draw(e);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        function draw(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!isDrawing) {
+                // If not currently drawing, clear the canvas and draw a white background
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#000' // black fill
+                ctx.fillRect(0, 0, canvas.width, canvas.height); // Draw a rectangle
+            }
+
+            ctx.fillStyle = '#fff'// white
+            ctx.fillRect(x, y, 7,7); //5, 5);
+        }
+
+        
+        function classifyImage() {
+            console.log('*** Classifiying Image ****')
+            const dataURL = canvas.toDataURL('image/png');
+            const imgData = dataURL.replace(/^data:image\/(png|jpg);base64,/, ""); // Extract base64 image data
+            
+            // Send image data to server for classification
+            fetch('http://localhost:5000/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                },
+                body: JSON.stringify({ 'image': imgData }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(`Prediction: ${data.prediction} Proba: ${data.probability}`);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>
